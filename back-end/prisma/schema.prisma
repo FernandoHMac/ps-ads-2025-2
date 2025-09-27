@@ -59,7 +59,7 @@ model Seller {
   id                Int           @id @default(autoincrement())
   fullname          String        // Nome completo
   birth_date        DateTime?     // Data de nascimento
-  identity_document  String       
+  identity_document  String       @unique  // Documento de identidade, não pode se repetir na tabela
   email             String        @unique
   phone             String        
   is_manager        Boolean       @default(false)
