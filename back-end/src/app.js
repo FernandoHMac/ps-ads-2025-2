@@ -1,3 +1,7 @@
+// Carregando as variáveis de ambiente do arquivo.env
+import dotenv from 'dotenv'
+dotenv.config()
+
 import express, { json, urlencoded } from 'express'
 import cookieParser from 'cookie-parser'
 import logger from 'morgan'
@@ -14,6 +18,10 @@ app.use(cookieParser())
 app.use('/', indexRouter)
 
 /**************** ROTAS *******************/
+
+// Middleware de verificação de autorização
+import authMiddleware from './middleware/auth.js'
+app.use(authMiddleware)
 
 import customersRoute from './routes/customers.js'
 app.use('/customers', customersRoute)
