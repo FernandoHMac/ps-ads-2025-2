@@ -5,6 +5,7 @@ import jwt from 'jsonwebtoken'
 
 
 
+
 const controller = {}   // Objeto vazio
 
 // Todas as funções de controller têm, pelo menos,
@@ -149,6 +150,7 @@ controller.delete = async function (req, res) {
   }
 }
 
+
 controller.login = async function (req, res) {
   try {
     // Busca o usuário no BD usando o valor dos campos
@@ -203,7 +205,6 @@ controller.login = async function (req, res) {
     res.status(500).end()
   }
 }
-
 
 
 export default controller
