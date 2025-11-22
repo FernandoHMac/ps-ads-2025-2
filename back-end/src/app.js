@@ -12,6 +12,16 @@ import indexRouter from './routes/index.js'
 
 const app = express()
 
+// Configurando o CORS para aceitar requisições a partir
+// dos servidores configurados na variável de ambiente
+// ALLOWED_ORIGINS
+import cors from 'cors'
+app.use(cors({
+  origin: process.env.ALLOWED_ORIGINS.split(','),
+  credentials: true   // Habilita o envio de cookies para o front-end
+}))
+
+
 app.use(logger('dev'))
 app.use(json())
 app.use(urlencoded({ extended: false }))

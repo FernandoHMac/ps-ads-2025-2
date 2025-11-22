@@ -7,6 +7,8 @@ import logo from '../assets/karangos-logo-600px.png'
 
 import MainMenu from './MainMenu'
 
+import AuthWidgets from './AuthWidgets'
+
 export default function TopBar() {
   return (
     <Box sx={{ flexGrow: 1 }}>
@@ -14,12 +16,14 @@ export default function TopBar() {
         <Toolbar variant="dense">
           <MainMenu />
           
-          <Box>
+          <Box sx={{ flexGrow: 1 }}>
             <img 
               src={logo} alt="Logotipo Karangos"
               style={{ width: '300px' }} 
             />
           </Box>
+
+          <AuthWidgets />
 
         </Toolbar>
       </AppBar>

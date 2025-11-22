@@ -81,4 +81,3 @@ fetchAuth.delete = async function(route) {
 }
 
 export default fetchAuth
-Comment

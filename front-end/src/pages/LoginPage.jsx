@@ -12,7 +12,7 @@ import { feedbackNotify, feedbackWait } from '../ui/Feedback'
 
 import fetchAuth from '../lib/fetchAuth'
 
-// import AuthContext from '../contexts/AuthContext'
+import AuthContext from '../contexts/AuthContext'
 
 export default function LoginPage() {
 
@@ -27,7 +27,7 @@ export default function LoginPage() {
     showPassword
   } = state
 
-  // const { authState, setAuthState } = React.useContext(AuthContext)
+   const { authState, setAuthState } = React.useContext(AuthContext)
 
   const navigate = useNavigate()
 
@@ -64,7 +64,7 @@ export default function LoginPage() {
       )
 
       // Guarda no contexto as informações sobre o usuário autenticado
-      // setAuthState({ ...authState, authUser: result.user })
+       setAuthState({ ...authState, authUser: result.user })
 
       feedbackNotify(
         'Autenticação realizada com sucesso', 
