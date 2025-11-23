@@ -15,24 +15,40 @@ import Checkbox from '@mui/material/Checkbox';
 import FormControlLabel from '@mui/material/FormControlLabel';
 
 import fetchAuth from '../../lib/fetchAuth'
+import Car from '../../models/Car.js'  
+import { ZodError } from 'zod'
+
+// Função auxiliar para validar um campo individualmente (para onBlur)
+function validateField(fieldName, value, schema) {
+  try {
+    const partialSchema = schema.pick({ [fieldName]: true });
+    partialSchema.parse({ [fieldName]: value });
+    return null; // Sem erro
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return error.issues[0]?.message || 'Erro de validação';
+    }
+    return error.message;
+  }
+}
 
 export default function CarsForm() {
 
+  // Ajuste: Cores em maiúsculas para coincidir com Zod
   const carsColor = [
-    { value: "Amarelo", label: "Amarelo" },
-    { value: "Azul", label: "Azul" },
-    { value: "Branco", label: "Branco" },
-    { value: "Carmim", label: "Carmim" },
-    { value: "Ciano", label: "Ciano" },
-    { value: "Cinza", label: "Cinza" },
-    { value: "Dourado", label: "Dourado" },
-    { value: "Marrom", label: "Marrom" },
-    { value: "Prata", label: "Prata" },
-    { value: "Preto", label: "Preto" },
-    { value: "Roxo", label: "Roxo" },
-    { value: "Verde", label: "Verde" },
-    { value: "Vermelho", label: "Vermelho" },
-    { value: "Vinho", label: "Vinho" }
+    { value: "AMARELO", label: "Amarelo" },
+    { value: "AZUL", label: "Azul" },
+    { value: "BRANCO", label: "Branco" },
+    { value: "CINZA", label: "Cinza" },
+    { value: "DOURADO", label: "Dourado" },
+    { value: "LARANJA", label: "Laranja" },  // Adicionei para coincidir com Zod
+    { value: "MARROM", label: "Marrom" },
+    { value: "PRATA", label: "Prata" },
+    { value: "PRETO", label: "Preto" },
+    { value: "ROSA", label: "Rosa" },
+    { value: "ROXO", label: "Roxo" },
+    { value: "VERDE", label: "Verde" },
+    { value: "VERMELHO", label: "Vermelho" }
   ]
 
   const currentYear = new Date().getFullYear();
@@ -41,13 +57,12 @@ export default function CarsForm() {
     years.push({ value: year, label: year.toString() });
   }
 
-
+  // Ajuste: Máscara sem hífen para coincidir com Zod (8 caracteres)
   const platesRef = useMask({
-    mask: "aaa-9$99",
+    mask: "AAA9999",  // 3 letras + 4 dígitos, sem hífen
     replacement: { 
-      'a': /[A-Z]/,      // apenas letras maiúsculas
-      '9': /[0-9]/,      // dígitos
-      '$': /[A-J0-9]/    // letra de A a J ou dígito
+      'A': /[A-Z]/,   // Apenas maiúsculas
+      '9': /[0-9]/
     },
     showMask: false
   })
@@ -59,10 +74,10 @@ export default function CarsForm() {
     brand: '',
     model: '',
     color: '',
-    year_manufacture: '',
+    year_manufacture: '',  
     imported: false,
     plates: '',
-    selling_price: '',
+    selling_price: '',    
     selling_date: null
   }
 
@@ -72,19 +87,17 @@ export default function CarsForm() {
   // Variáveis de estado
   const [state, setState] = React.useState({
     car: { ...formDefaults },
-    formModified: false
+    formModified: false,
+    inputErrors: {}
   })
-  const {
-    car,
-    formModified
-  } = state
+  const { car, formModified, inputErrors } = state
 
   // Se estivermos editando um cliente, precisamos buscar os seus dados
   // no servidor assim que o componente for carregado
   React.useEffect(() => {
     // Sabemos que estamos editando (e não cadastrando um novo) cliente
     // quando a rota ativa contiver um parâmetro chamado id
-    if(params.id) loadData()
+    if (params.id) loadData()
   }, [])
 
   async function loadData() {
@@ -92,18 +105,18 @@ export default function CarsForm() {
     try {
       const result = await fetchAuth.get(`/cars/${params.id}`)
 
-      // Converte o formato de data armazenado no banco de dados
+       // Converte o formato de data armazenado no banco de dados
       // para o formato reconhecido pelo componente DatePicker
-      if(result.selling_date) result.selling_date = parseISO(result.selling_date)
+      if (result.selling_date) result.selling_date = parseISO(result.selling_date)
 
-      // Armazena os dados obtidos na variável de estado
+        // Armazena os dados obttidos na variável de estado
       setState({ ...state, car: result })
-    }
-    catch(error) {
+    } 
+    catch (error) {
       console.error(error)
       feedbackNotify('ERRO: ' + error.message)
     }
-    finally {
+     finally {
       feedbackWait(false)
     }
   }
@@ -122,43 +135,65 @@ export default function CarsForm() {
     setState({ ...state, car: carCopy, formModified: true })
   }
 
+  // Novo: Função para validação em tempo real (onBlur)
+  function handleFieldBlur(event) {
+    const { name, value } = event.target;
+    const error = validateField(name, value, Car);
+    setState(prevState => ({
+      ...prevState,
+      inputErrors: { ...prevState.inputErrors, [name]: error }
+    }));
+  }
+
   async function handleFormSubmit(event) {
-    event.preventDefault()    // Impede o recarregamento da página
+    event.preventDefault()
     feedbackWait(true)
     try {
-            // Se houver parâmetro na rota, significa que estamos alterando
-      // um registro existente. Portanto, fetch() precisa ser chamado
-      // com o verbo PUT
-      if(params.id) {
-        await fetchAuth.put(`/cars/${params.id}`, car)
+      // Ajuste: Converta tipos antes da validação
+      const carToValidate = {
+        ...car,
+        year_manufacture: car.year_manufacture ? parseInt(car.year_manufacture, 10) : undefined,
+        selling_price: car.selling_price ? parseFloat(car.selling_price) : undefined,
+        // selling_date já é Date ou null
       }
-      // Senão, envia com o método POST para criar um novo registro
-      else {
-        await fetchAuth.post('/cars', car)
+
+      Car.parse(carToValidate)
+
+      if (params.id) {
+        await fetchAuth.put(`/cars/${params.id}`, carToValidate)
+      } else {
+        await fetchAuth.post('/cars', carToValidate)
       }
 
       feedbackNotify('Item salvo com sucesso.', 'success', 2500, () => {
-        // Retorna para a página de listagem
         navigate('..', { relative: 'path', replace: true })
       })
     }
-    catch(error) {
+     catch (error) {
       console.error(error)
-      feedbackNotify('ERRO: ' + error.message, 'error')
+
+      if (error instanceof ZodError) {
+        const errorMessages = {}
+        for (let i of error.issues) errorMessages[i.path[0]] = i.message
+        setState({ ...state, inputErrors: errorMessages })
+        feedbackNotify('Há campos com valores inválidos. Verifique.', 'error')
+      } else {
+        feedbackNotify(error.message, 'error')
+      }
     }
-    finally {
+     finally {
       feedbackWait(false)
     }
   }
 
   async function handleBackButtonClick() {
-    if(
+    if (
       formModified &&
-      ! await feedbackConfirm('Há informações não salvas. Deseja realmente sair?')
+      !await feedbackConfirm('Há informações não salvas. Deseja realmente sair?')
     ) return    // Sai da função sem fazer nada
 
     // Aqui o usuário respondeu que quer voltar e perder os dados
-    navigate('..', { relative: 'path', replace: 'true' })
+    navigate('..', { relative: 'path', replace: true })
   }
 
   return <>
@@ -169,8 +204,8 @@ export default function CarsForm() {
     <Box className="form-fields">
       <form onSubmit={handleFormSubmit}>
 
-        {/* autoFocus ~> foco do teclado no primeiro campo */}
-        <TextField 
+          {/* autoFocus ~> foco do teclado no primeiro campo */}
+          <TextField 
           variant="outlined"
           name="brand"
           label="Marca"
@@ -179,6 +214,9 @@ export default function CarsForm() {
           autoFocus
           value={car.brand}
           onChange={handleFieldChange}
+          onBlur={handleFieldBlur}  // Adicionado para validação em tempo real
+          error={inputErrors.brand}
+          helperText={inputErrors.brand}
         />
 
         <div className="MuiFormControl-root">
@@ -204,6 +242,9 @@ export default function CarsForm() {
           required
           value={car.model}
           onChange={handleFieldChange}
+          onBlur={handleFieldBlur}
+          error={inputErrors.model}
+          helperText={inputErrors.model}
         />
 
         <TextField
@@ -215,6 +256,9 @@ export default function CarsForm() {
           required
           value={car.plates}
           onChange={handleFieldChange}
+          onBlur={handleFieldBlur}
+          error={inputErrors.plates}
+          helperText={inputErrors.plates}
         />
 
         <TextField
@@ -226,14 +270,15 @@ export default function CarsForm() {
           value={car.color}
           select
           onChange={handleFieldChange}
+          onBlur={handleFieldBlur}
+          error={inputErrors.color}
+          helperText={inputErrors?.color}
         >
-          {
-            carsColor.map(c => 
-              <MenuItem key={c.value} value={c.value}>
-                {c.label}
-              </MenuItem>
-            )
-          }
+          {carsColor.map(c => 
+            <MenuItem key={c.value} value={c.value}>
+              {c.label}
+            </MenuItem>
+          )}
         </TextField>
         
         <TextField
@@ -241,7 +286,7 @@ export default function CarsForm() {
           name="selling_price"
           label="Preço de Venda"
           fullWidth
-          required
+          // Removido required, pois é opcional no Zod
           inputMode="numeric"
           value={car.selling_price}
           onChange={(e) => {
@@ -250,6 +295,9 @@ export default function CarsForm() {
               handleFieldChange(e);
             }
           }}
+          onBlur={handleFieldBlur}
+          error={inputErrors.selling_price}
+          helperText={inputErrors.selling_price}
         />
 
         <TextField
@@ -261,24 +309,17 @@ export default function CarsForm() {
           value={car.year_manufacture}
           select
           onChange={handleFieldChange}
-          >
-            {
-            years.map(y => 
-              <MenuItem key={y.value} value={y.value}>
-                {y.label}
-              </MenuItem>
-            )
-          }
-            
+          onBlur={handleFieldBlur}
+          error={inputErrors.year_manufacture}
+          helperText={inputErrors.year_manufacture}
+        >
+          {years.map(y => 
+            <MenuItem key={y.value} value={y.value}>
+              {y.label}
+            </MenuItem>
+          )}
         </TextField>
         
-        {/* 
-          O evento onChange do componente DatePicker não passa o parâmetro
-          "event", como o TextField, e sim a própria data que foi modificada.
-          Por isso, ao chamar a função handleFieldChange() no DatePicker,
-          precisamos criar um parâmetro "event" "fake" com as informações
-          necessárias.
-        */}
         <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ptBR}>
           <DatePicker 
             label="Data de Venda"
@@ -286,12 +327,22 @@ export default function CarsForm() {
             slotProps={{
               textField: {
                 variant: "outlined",
-                fullWidth: true
+                fullWidth: true,
+                // Removido required, pois é opcional
+                error: inputErrors.selling_date,
+                helperText: inputErrors.selling_date
               }
             }}
             onChange={ date => {
               const event = { target: { name: 'selling_date', value: date } }
               handleFieldChange(event)
+            }}
+            onClose={() => {  // Simula onBlur para DatePicker
+              const error = validateField('selling_date', car.selling_date, Car);
+              setState(prevState => ({
+                ...prevState,
+                inputErrors: { ...prevState.inputErrors, selling_date: error }
+              }));
             }}
           />
         </LocalizationProvider>

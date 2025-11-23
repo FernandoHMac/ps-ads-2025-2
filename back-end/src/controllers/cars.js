@@ -1,4 +1,6 @@
 import prisma from '../database/client.js'
+import Car from '../models/Car.js'
+import { ZodError } from 'zod'
 
 const controller = {}   // Objeto vazio
 
@@ -8,6 +10,13 @@ const controller = {}   // Objeto vazio
 // res ~> representa a resposta (response)
 controller.create = async function(req, res) {
   try {
+      // Sempre que houver um campo que represente uma data,
+    // precisamos garantir sua conversão para o tipo Date
+    if(req.body.selling_date) req.body.selling_date = new Date(req.body.selling_date)
+
+    // Invoca a validação do modelo do Zod para os dados que vieram em req.body
+    Car.parse(req.body)
+
     // Para a inserção no BD, os dados são enviados
     // dentro de um objeto chamado "body" que vem
     // dentro da requisição ("req")
@@ -16,16 +25,18 @@ controller.create = async function(req, res) {
     // Se tudo der certo, enviamos o código HTTP
     // apropriado, no caso
     // HTTP 201: created
-    res.status(201).end()
+     res.status(201).end()
   }
   catch(error) {
     // Se algo de errado ocorrer, cairemos aqui
     console.error(error)  // Exibe o erro no terminal
 
+     if(error instanceof ZodError) res.status(422).send(error.issues)
+
     // Enviamos como resposta o código HTTP relativo
     // a erro interno do servidor
     // HTTP 500: Internal Server Error
-    res.status(500).end()
+    else res.status(500).end()
   }
 }
 
@@ -77,6 +88,11 @@ controller.retrieveOne = async function (req, res) {
 
 controller.update = async function(req, res) {
   try {
+    if(req.body.selling_date) req.body.selling_date = new Date(req.body.selling_date)
+
+    // Validação com Zod
+    Car.parse(req.body)
+
     // Busca o registro no banco de dados por seu id
     // e o atualiza com as informações que vieram em req.body
     await prisma.car.update({
@@ -93,6 +109,9 @@ controller.update = async function(req, res) {
 
     // Não encontrou e não atualizou ~> HTTP 404: Not Found
     if(error?.code === 'P2025') res.status(404).end()
+
+        // Erro do Zod ~> HTTP 422: Unprocessable Entity
+    else if(error instanceof ZodError) res.status(422).send(error.issues)
 
     // Se não for erro de não encontrado, retorna o habitual
     // HTTP 500: Internal Server Error
