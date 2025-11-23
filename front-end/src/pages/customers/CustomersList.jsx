@@ -12,6 +12,8 @@ import AddCircleIcon from '@mui/icons-material/AddCircle'
 
 import { feedbackWait, feedbackConfirm, feedbackNotify } from '../../ui/Feedback'
 
+import fetchAuth from '../../lib/fetchAuth'
+
 export default function CustomersList() {
 
   const columns = [
@@ -89,8 +91,7 @@ export default function CustomersList() {
   async function loadData() {
     feedbackWait(true)
     try {
-      const response = await fetch(import.meta.env.VITE_API_BASE + '/customers')
-      const data = await response.json()
+      const data = await fetchAuth.get('/customers')
 
       // Atualiza a variável de estado com os dados obtidos
       setState({ ...state, customers: data })
@@ -114,9 +115,8 @@ export default function CustomersList() {
       feedbackWait(true)
       try {
         // Envia a requisição para a exclusão do registro
-        await fetch(import.meta.env.VITE_API_BASE + `/customers/${id}`,
-          { method: 'DELETE' }
-        )
+        await fetchAuth.delete(`/customers/${id}`)
+
         // Atualiza os dados do datagrid
         loadData()
         feedbackNotify('Exclusão efetuada com sucesso.')

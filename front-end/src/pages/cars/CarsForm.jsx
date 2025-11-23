@@ -11,7 +11,10 @@ import { parseISO } from 'date-fns'
 import { feedbackWait, feedbackNotify, feedbackConfirm } from '../../ui/Feedback'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useMask } from '@react-input/mask'
-import { Checkbox, FormControlLabel } from '@mui/material'
+import Checkbox from '@mui/material/Checkbox';
+import FormControlLabel from '@mui/material/FormControlLabel';
+
+import fetchAuth from '../../lib/fetchAuth'
 
 export default function CarsForm() {
 
@@ -57,7 +60,7 @@ export default function CarsForm() {
     model: '',
     color: '',
     year_manufacture: '',
-    imported: '',
+    imported: false,
     plates: '',
     selling_price: '',
     selling_date: null
@@ -87,10 +90,7 @@ export default function CarsForm() {
   async function loadData() {
     feedbackWait(true)
     try {
-      const response = await fetch(
-        import.meta.env.VITE_API_BASE + `/cars/${params.id}`
-      )
-      const result = await response.json()
+      const result = await fetchAuth.get(`/cars/${params.id}`)
 
       // Converte o formato de data armazenado no banco de dados
       // para o formato reconhecido pelo componente DatePicker
@@ -126,27 +126,15 @@ export default function CarsForm() {
     event.preventDefault()    // Impede o recarregamento da página
     feedbackWait(true)
     try {
-      // Prepara as opções para o fetch
-      const reqOptions = {
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(car)
-      }
-
-      // Se houver parâmetro na rota, significa que estamos alterando
+            // Se houver parâmetro na rota, significa que estamos alterando
       // um registro existente. Portanto, fetch() precisa ser chamado
       // com o verbo PUT
       if(params.id) {
-        await fetch(
-          import.meta.env.VITE_API_BASE + `/cars/${params.id}`,
-          { ...reqOptions, method: 'PUT' }
-        )
+        await fetchAuth.put(`/cars/${params.id}`, car)
       }
       // Senão, envia com o método POST para criar um novo registro
       else {
-        await fetch(
-          import.meta.env.VITE_API_BASE + `/cars`,
-          { ...reqOptions, method: 'POST' }
-        )
+        await fetchAuth.post('/cars', car)
       }
 
       feedbackNotify('Item salvo com sucesso.', 'success', 2500, () => {
