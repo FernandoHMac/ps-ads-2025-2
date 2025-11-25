@@ -1,30 +1,26 @@
-// import { PrismaClient } from '../generated/prisma/default.js'
+// src/helpers/prisma.js
 
-// const prisma = new PrismaClient({
-//   log: [{
-//     emit: 'event',
-//     level: 'query'
-//   }]
-// })
-
-
-import { PrismaClient } from '../generated/prisma/default.js'
+import { PrismaClient } from '@prisma/client'
 import { withAccelerate } from '@prisma/extension-accelerate'
 
+// Prisma base (com logs das queries)
 const prismaBase = new PrismaClient({
-  log: [{
-    emit: 'event',
-    level: 'query'
-  }]
+  log: [
+    {
+      emit: 'event',
+      level: 'query'
+    }
+  ]
 })
 
-// Exibe no terminal as instruções SQL enviadas ao BD
+// Exibe no terminal as queries SQL enviadas ao banco
 prismaBase.$on('query', event => {
   console.log('-'.repeat(60))
   console.log(event.query)
-  if(event.params) console.log('PARAMS:', event.params)
+  if (event.params) console.log('PARAMS:', event.params)
 })
 
+// Prisma final com Accelerate
 const prisma = prismaBase.$extends(withAccelerate())
 
 export default prisma

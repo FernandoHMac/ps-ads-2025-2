@@ -1,12 +1,7 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// prisma/schema.prisma
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
 }
 
 datasource db {
@@ -14,16 +9,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-/*
-  O nome de um model no Prisma:
-  * deve iniciar com letra maiúscula
-  * deve estar no singular
-*/
 model Customer {
-  id                Int           @id @default(autoincrement())
+  id                Int       @id @default(autoincrement())
   name              String
   ident_document    String
-  birth_date        DateTime?     // ? significa que o campo pode ter valor NULL
+  birth_date        DateTime?
   street_name       String
   house_number      String
   complements       String?
@@ -35,32 +25,32 @@ model Customer {
 }
 
 model Car {
-  id                Int           @id @default(autoincrement())
-  brand             String        // Marca do carro
-  model             String        // Modelo do carro
-  color             String        // Cor do carro
-  year_manufacture  Int           // Ano de fabricação
-  imported          Boolean       // Se o carro é importado ou não
-  plates            String        // Placas do carro
-  selling_date      DateTime?     // Data de venda; preenchimento opcional
-  selling_price     Decimal?      // Preço de venda; preenchimento opcional 
+  id                Int       @id @default(autoincrement())
+  brand             String
+  model             String
+  color             String
+  year_manufacture  Int
+  imported          Boolean
+  plates            String
+  selling_date      DateTime?
+  selling_price     Decimal?
 }
 
 model User {
-  id                Int           @id @default(autoincrement())
-  fullname          String        // Nome completo
-  username          String        @unique   // Não pode se repetir na tabela
-  email             String        @unique
-  password          String        
-  is_admin          Boolean       @default(false)
+  id        Int      @id @default(autoincrement())
+  fullname  String
+  username  String   @unique
+  email     String   @unique
+  password  String
+  is_admin  Boolean  @default(false)
 }
 
 model Seller {
-  id                Int           @id @default(autoincrement())
+  id                Int      @id @default(autoincrement())
   fullname          String
   birth_date        DateTime
-  identity_document String        @unique
-  email             String        @unique
+  identity_document String   @unique
+  email             String   @unique
   phone             String
-  is_manager        Boolean       @default(false)        
+  is_manager        Boolean  @default(false)
 }
